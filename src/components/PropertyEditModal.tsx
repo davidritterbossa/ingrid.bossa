@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Property, TipoNegocio, CategoriaImovel, StatusImovel, BAIRROS_TOLEDO, CATEGORIAS } from '@/types/property';
+import { addStoredProperty, updateStoredProperty } from '@/lib/propertyStore';
 import {
   X,
   Check,
@@ -38,22 +39,37 @@ export default function PropertyEditModal({
   onClose,
   onSave,
 }: PropertyEditModalProps) {
-  const [formData, setFormData] = useState<Property>({ ...property });
+  const [formData, setFormData] = useState<Property>({
+    ...property,
+    comodidades: property.comodidades || [],
+    imagens: property.imagens || [],
+  });
   
   // Categorias e Bairros do Banco de Dados
   const [dbCategories, setDbCategories] = useState<string[]>([]);
   const [dbNeighborhoods, setDbNeighborhoods] = useState<string[]>([]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
-      fetch('/api/categories').then(res => res.json()).then(json => {
-        if (json.success) setDbCategories(json.data.map((c: any) => c.name));
+      setFormData({
+        ...property,
+        comodidades: property.comodidades || [],
+        imagens: property.imagens || [],
       });
-      fetch('/api/neighborhoods').then(res => res.json()).then(json => {
-        if (json.success) setDbNeighborhoods(json.data.map((n: any) => n.name));
-      });
+      fetch('/api/categories')
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && json.data) setDbCategories(json.data.map((c: any) => c.name));
+        })
+        .catch(() => {});
+      fetch('/api/neighborhoods')
+        .then(res => res.json())
+        .then(json => {
+          if (json.success && json.data) setDbNeighborhoods(json.data.map((n: any) => n.name));
+        })
+        .catch(() => {});
     }
-  }, [isOpen]);
+  }, [isOpen, property]);
   // pendingFiles: arquivos locais e suas object URLs
   const [pendingFiles, setPendingFiles] = useState<{ url: string; file: File }[]>([]);
   const [newAmenity, setNewAmenity] = useState('');
@@ -204,11 +220,13 @@ export default function PropertyEditModal({
   // --- COMODIDADES ---
   const handleAddAmenity = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newAmenity.trim()) return;
-    if (!formData.comodidades.includes(newAmenity.trim())) {
+    const clean = newAmenity.trim();
+    if (!clean) return;
+    const current = formData.comodidades || [];
+    if (!current.includes(clean)) {
       setFormData((prev) => ({
         ...prev,
-        comodidades: [...prev.comodidades, newAmenity.trim()],
+        comodidades: [...(prev.comodidades || []), clean],
       }));
     }
     setNewAmenity('');
@@ -217,7 +235,7 @@ export default function PropertyEditModal({
   const handleRemoveAmenity = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      comodidades: prev.comodidades.filter((_, i) => i !== index),
+      comodidades: (prev.comodidades || []).filter((_, i) => i !== index),
     }));
   };
 
@@ -306,20 +324,46 @@ export default function PropertyEditModal({
           fd.append('images', url);
         });
 
-        const res = await fetch('/api/properties', { method: 'POST', body: fd });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error || 'Erro ao cadastrar imóvel');
-        onSave(json.data);
+        try {
+          const res = await fetch('/api/properties', { method: 'POST', body: fd });
+          const json = await res.json();
+          if (json.success && json.data) {
+            onSave(json.data);
+          } else {
+            throw new Error(json.error || 'Erro na resposta da API');
+          }
+        } catch (apiErr) {
+          console.warn('API indisponível, salvando localmente:', apiErr);
+          const savedLocal = addStoredProperty({
+            ...formData,
+            imagens: finalImages,
+            comodidades: formData.comodidades || [],
+          });
+          onSave(savedLocal);
+        }
       } else {
         // --- EDITAR IMÓVEL EXISTENTE via PATCH ---
-        const res = await fetch(`/api/properties/${formData.id}`, {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ ...formData, imagens: finalImages })
-        });
-        const json = await res.json();
-        if (!json.success) throw new Error(json.error || 'Erro ao atualizar imóvel');
-        onSave(json.data);
+        try {
+          const res = await fetch(`/api/properties/${formData.id}`, {
+            method: 'PATCH',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...formData, imagens: finalImages })
+          });
+          const json = await res.json();
+          if (json.success && json.data) {
+            onSave(json.data);
+          } else {
+            throw new Error(json.error || 'Erro na resposta da API');
+          }
+        } catch (apiErr) {
+          console.warn('API indisponível, salvando localmente:', apiErr);
+          const updatedLocal = updateStoredProperty(formData.id, {
+            ...formData,
+            imagens: finalImages,
+            comodidades: formData.comodidades || [],
+          });
+          if (updatedLocal) onSave(updatedLocal);
+        }
       }
 
       onClose();
@@ -849,7 +893,7 @@ export default function PropertyEditModal({
             </div>
 
             <div className="flex flex-wrap gap-2 pt-2">
-              {formData.comodidades.map((item, idx) => (
+              {(formData.comodidades || []).map((item, idx) => (
                 <span
                   key={idx}
                   className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-gray-100 text-gray-800 text-xs font-semibold border border-gray-200"

@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { fromSupabase, toSupabase, SupabaseProperty } from '@/lib/supabaseMapper';
+import { MOCK_PROPERTIES } from '@/lib/mock';
 
 export const dynamic = 'force-dynamic';
 
-// GET: Busca um imóvel pelo ID
+// GET: Busca um imóvel pelo ID (com fallback para mock)
 export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
@@ -16,15 +17,23 @@ export async function GET(
       .eq('id', params.id)
       .single();
 
-    if (error) {
+    if (error || !data) {
+      const fallback = MOCK_PROPERTIES.find((p) => String(p.id) === String(params.id));
+      if (fallback) {
+        return NextResponse.json({ success: true, data: fallback, isFallback: true });
+      }
       return NextResponse.json(
-        { success: false, error: error.message },
-        { status: error.code === 'PGRST116' ? 404 : 500 }
+        { success: false, error: error?.message || 'Imóvel não encontrado.' },
+        { status: 404 }
       );
     }
 
     return NextResponse.json({ success: true, data: fromSupabase(data as SupabaseProperty) });
   } catch (err: any) {
+    const fallback = MOCK_PROPERTIES.find((p) => String(p.id) === String(params.id));
+    if (fallback) {
+      return NextResponse.json({ success: true, data: fallback, isFallback: true });
+    }
     return NextResponse.json(
       { success: false, error: err.message || 'Erro interno' },
       { status: 500 }

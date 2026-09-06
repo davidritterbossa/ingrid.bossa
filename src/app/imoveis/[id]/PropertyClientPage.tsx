@@ -12,7 +12,13 @@ import PropertyAdminBar from '@/components/PropertyAdminBar';
 import PropertyEditModal from '@/components/PropertyEditModal';
 import { Property, StatusImovel, STATUS_IMOVEL_CONFIG } from '@/types/property';
 import { useAuth } from '@/context/AuthContext';
-import { getStoredPropertyById } from '@/lib/propertyStore';
+import {
+  getStoredPropertyById,
+  updateStoredProperty,
+  deleteStoredProperty,
+  updatePropertyStatus,
+  updatePropertyImages,
+} from '@/lib/propertyStore';
 
 interface PropertyClientPageProps {
   initialProperty: Property | null;
@@ -77,9 +83,10 @@ export default function PropertyClientPage({
     );
   }
 
-  // Ações da Corretora — chamam a API
+  // Ações da Corretora — chamam a API e sincronizam o store local
   const handleStatusChange = async (newStatus: StatusImovel) => {
     setProperty((prev) => prev ? { ...prev, status: newStatus } : prev);
+    updatePropertyStatus(property.id, newStatus);
     try {
       const res = await fetch(`/api/properties/${property.id}`, {
         method: 'PATCH',
@@ -89,12 +96,13 @@ export default function PropertyClientPage({
       const json = await res.json();
       if (json.success) setProperty(json.data);
     } catch (err) {
-      console.error('Erro ao atualizar status:', err);
+      console.error('Erro ao atualizar status na API:', err);
     }
   };
 
   const handleImagesChange = async (newImages: string[]) => {
     setProperty((prev) => prev ? { ...prev, imagens: newImages } : prev);
+    updatePropertyImages(property.id, newImages);
     try {
       await fetch(`/api/properties/${property.id}`, {
         method: 'PATCH',
@@ -102,33 +110,36 @@ export default function PropertyClientPage({
         body: JSON.stringify({ imagens: newImages }),
       });
     } catch (err) {
-      console.error('Erro ao atualizar imagens:', err);
+      console.error('Erro ao atualizar imagens na API:', err);
     }
   };
 
   const handleSavePropertyData = (updatedData: Property) => {
     setProperty(updatedData);
+    updateStoredProperty(updatedData.id, updatedData);
   };
 
   const handleDeleteProperty = async () => {
+    deleteStoredProperty(property.id);
     try {
       await fetch(`/api/properties/${property.id}`, { method: 'DELETE' });
     } catch (err) {
-      console.error('Erro ao excluir imóvel:', err);
+      console.error('Erro ao excluir imóvel na API:', err);
     }
     router.push('/imoveis');
   };
 
-  // Formatação de Preço
+  // Formatação Segura de Preço
   const formattedPrice = new Intl.NumberFormat('pt-BR', {
     style: 'currency',
     currency: 'BRL',
     maximumFractionDigits: 0,
-  }).format(property.preco);
+  }).format(Number(property.preco) || 0);
 
   const statusConfig = STATUS_IMOVEL_CONFIG[property.status] || STATUS_IMOVEL_CONFIG.disponivel;
+  const propertyCode = property.codigo || String(property.id || '').split('-')[0] || 'REF';
   const whatsappMessage = encodeURIComponent(
-    `Olá, Ingrid! Tenho interesse no imóvel "${property.titulo}" (Ref: #${property.codigo || property.id.split('-')[0]}). Gostaria de mais informações!`
+    `Olá, Ingrid! Tenho interesse no imóvel "${property.titulo}" (Ref: #${propertyCode}). Gostaria de mais informações!`
   );
   const whatsappUrl = `https://wa.me/5545998100534?text=${whatsappMessage}`;
 
@@ -301,7 +312,7 @@ export default function PropertyClientPage({
         />
       )}
 
-      <WhatsAppCTA propertyTitle={property.titulo} propertyId={property.codigo || property.id.split('-')[0]} />
+      <WhatsAppCTA propertyTitle={property.titulo} propertyId={propertyCode} />
     </div>
   );
 }

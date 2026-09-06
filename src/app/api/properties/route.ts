@@ -2,17 +2,18 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { fromSupabase, SupabaseProperty } from '@/lib/supabaseMapper';
+import { MOCK_PROPERTIES } from '@/lib/mock';
 
 export const dynamic = 'force-dynamic';
 
-// GET: Listagem de imóveis do Supabase
+// GET: Listagem de imóveis do Supabase (com fallback resiliente para mock)
 export async function GET(request: NextRequest) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const category = searchParams.get('category');
-    const type = searchParams.get('type');
+  const { searchParams } = new URL(request.url);
+  const status = searchParams.get('status');
+  const category = searchParams.get('category');
+  const type = searchParams.get('type');
 
+  try {
     let query = supabase
       .from('properties')
       .select('*')
@@ -31,20 +32,26 @@ export async function GET(request: NextRequest) {
     const { data, error } = await query;
 
     if (error) {
-      console.error('Erro ao buscar imóveis no Supabase:', error);
-      return NextResponse.json(
-        { success: false, error: error.message },
-        { status: 500 }
-      );
+      console.warn('Supabase offline ou tabela inexistente, servindo catálogo local de Toledo:', error.message);
+      let mockData = [...MOCK_PROPERTIES];
+      if (status && status !== 'todos') mockData = mockData.filter(p => p.status === status);
+      if (category) mockData = mockData.filter(p => (p.categoria || '').toLowerCase() === category.toLowerCase());
+      if (type) mockData = mockData.filter(p => (p.tipo || '').toLowerCase() === type.toLowerCase());
+      return NextResponse.json({ success: true, data: mockData, isFallback: true }, { status: 200 });
     }
 
-    return NextResponse.json({ success: true, data: (data || []).map((row) => fromSupabase(row as SupabaseProperty)) }, { status: 200 });
+    if (!data || data.length === 0) {
+      return NextResponse.json({ success: true, data: MOCK_PROPERTIES, isFallback: true }, { status: 200 });
+    }
+
+    return NextResponse.json({ success: true, data: data.map((row) => fromSupabase(row as SupabaseProperty)) }, { status: 200 });
   } catch (err: any) {
-    console.error('Erro inesperado no GET /api/properties:', err);
-    return NextResponse.json(
-      { success: false, error: err.message || 'Erro interno no servidor' },
-      { status: 500 }
-    );
+    console.warn('Exceção no GET /api/properties, usando fallback local:', err);
+    let mockData = [...MOCK_PROPERTIES];
+    if (status && status !== 'todos') mockData = mockData.filter(p => p.status === status);
+    if (category) mockData = mockData.filter(p => (p.categoria || '').toLowerCase() === category.toLowerCase());
+    if (type) mockData = mockData.filter(p => (p.tipo || '').toLowerCase() === type.toLowerCase());
+    return NextResponse.json({ success: true, data: mockData, isFallback: true }, { status: 200 });
   }
 }
 

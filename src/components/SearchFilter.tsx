@@ -52,21 +52,48 @@ export default function SearchFilter() {
 
   return (
     <div className="bg-white/90 backdrop-blur-2xl rounded-[2.5rem] shadow-[0_20px_50px_rgba(20,18,17,0.12)] p-6 sm:p-8 md:p-9 w-full border border-white/80 text-left relative overflow-hidden">
-      {/* Cabeçalho do Buscador */}
+      {/* Cabeçalho do Buscador com Seleção de Tipo de Negócio */}
       <div className="flex flex-wrap items-center justify-between gap-3 mb-6 border-b border-stone-200/60 pb-4">
-        <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-[#1c1917] text-white font-bold text-xs sm:text-sm shadow-md">
-            <Home className="w-4 h-4 text-champagne-400" />
-            <span>Imóveis Selecionados</span>
-          </div>
-          <span className="text-xs font-semibold text-stone-500 hidden sm:inline">
-            Toledo e Região Oeste do PR
-          </span>
+        {/* Abas de Tipo: Todos, Comprar, Alugar */}
+        <div className="flex items-center gap-1.5 p-1 bg-stone-100 rounded-2xl border border-stone-200/60">
+          <button
+            type="button"
+            onClick={() => setTipo('')}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all ${
+              tipo === ''
+                ? 'bg-[#1c1917] text-white shadow-sm'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Todos
+          </button>
+          <button
+            type="button"
+            onClick={() => setTipo('venda')}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all ${
+              tipo === 'venda'
+                ? 'bg-[#1c1917] text-white shadow-sm'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Comprar
+          </button>
+          <button
+            type="button"
+            onClick={() => setTipo('locacao')}
+            className={`px-3.5 py-1.5 rounded-xl font-bold text-xs transition-all ${
+              tipo === 'locacao'
+                ? 'bg-[#1c1917] text-white shadow-sm'
+                : 'text-stone-600 hover:text-stone-900'
+            }`}
+          >
+            Alugar
+          </button>
         </div>
 
         <div className="flex items-center gap-1.5 text-xs text-rosebronze-700 font-bold bg-rosebronze-100/80 px-3.5 py-1.5 rounded-full border border-rosebronze-200">
           <Sparkles className="w-3.5 h-3.5 text-rosebronze-600" />
-          Oportunidades com Ingrid Bossa
+          Oportunidades em Toledo
         </div>
       </div>
 

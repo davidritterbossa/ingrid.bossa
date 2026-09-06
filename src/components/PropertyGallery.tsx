@@ -39,7 +39,7 @@ export default function PropertyGallery({
   onImagesChange,
   isEditable = true,
 }: PropertyGalleryProps) {
-  const [activeImages, setActiveImages] = useState<string[]>(images);
+  const [activeImages, setActiveImages] = useState<string[]>(Array.isArray(images) ? images : []);
   const [thumbsSwiper, setThumbsSwiper] = useState<SwiperType | null>(null);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
   const [isManagerOpen, setIsManagerOpen] = useState(false);
@@ -49,7 +49,7 @@ export default function PropertyGallery({
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    setActiveImages(images);
+    setActiveImages(Array.isArray(images) ? images : []);
   }, [images]);
 
   const showToast = (msg: string) => {

@@ -50,16 +50,19 @@ function ImoveisContent() {
     const bairro = searchParams.get('bairro');
 
     // Filtra imóveis visíveis (ocultos não aparecem na listagem pública)
-    let result = allProperties.filter((p) => p.status !== 'oculto');
+    let result = (allProperties || []).filter((p) => p && p.status !== 'oculto');
 
-    if (tipo) {
-      result = result.filter((p) => p.tipo.toLowerCase() === tipo.toLowerCase());
+    if (tipo && tipo.trim()) {
+      const cleanTipo = tipo.trim().toLowerCase();
+      result = result.filter((p) => (p.tipo || '').trim().toLowerCase() === cleanTipo);
     }
-    if (categoria) {
-      result = result.filter((p) => p.categoria.toLowerCase() === categoria.toLowerCase());
+    if (categoria && categoria.trim()) {
+      const cleanCategoria = categoria.trim().toLowerCase();
+      result = result.filter((p) => (p.categoria || '').trim().toLowerCase() === cleanCategoria);
     }
-    if (bairro) {
-      result = result.filter((p) => p.bairro.toLowerCase().includes(bairro.toLowerCase()));
+    if (bairro && bairro.trim()) {
+      const cleanBairro = bairro.trim().toLowerCase();
+      result = result.filter((p) => (p.bairro || '').trim().toLowerCase().includes(cleanBairro));
     }
 
     setFilteredProperties(result);

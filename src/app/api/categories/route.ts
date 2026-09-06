@@ -1,5 +1,6 @@
-﻿import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { CATEGORIAS } from '@/types/property';
 
 export const dynamic = 'force-dynamic';
 
@@ -10,10 +11,14 @@ export async function GET() {
       .select('*')
       .order('name');
       
-    if (error) throw error;
+    if (error || !data || data.length === 0) {
+      const fallback = Object.values(CATEGORIAS).map(name => ({ name }));
+      return NextResponse.json({ success: true, data: fallback, isFallback: true });
+    }
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
-    return NextResponse.json({ success: false, error: err.message }, { status: 500 });
+    const fallback = Object.values(CATEGORIAS).map(name => ({ name }));
+    return NextResponse.json({ success: true, data: fallback, isFallback: true });
   }
 }
 

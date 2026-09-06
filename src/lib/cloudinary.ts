@@ -19,6 +19,13 @@ export async function uploadImageToCloudinary(
   fileBuffer: Buffer,
   folder: string = 'imoveis-ingrid-bossa'
 ): Promise<string> {
+  // Se Cloudinary não estiver configurado nas variáveis de ambiente, retorna Data URL Base64 para total resiliência
+  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const apiKey = process.env.CLOUDINARY_API_KEY;
+  if (!cloudName || !apiKey || cloudName === 'demo' || cloudName === 'seu_cloud_name') {
+    return `data:image/jpeg;base64,${fileBuffer.toString('base64')}`;
+  }
+
   return new Promise((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
       {

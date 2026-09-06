@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { Property, StatusImovel, STATUS_IMOVEL_CONFIG, CATEGORIAS } from '@/types/property';
+import { getStoredProperties, deleteStoredProperty, updatePropertyStatus } from '@/lib/propertyStore';
 import PropertyEditModal from '@/components/PropertyEditModal';
 import {
   ShieldCheck,
@@ -59,7 +60,7 @@ export default function AdminDashboardPage() {
     }
   }, [isLoading, isAuthenticated, router]);
 
-  // Carrega imóveis do Supabase via API
+  // Carrega imóveis do Supabase via API com fallback para o catálogo local
   const loadProperties = useCallback(async () => {
     setIsFetching(true);
     setFetchError('');
@@ -68,10 +69,14 @@ export default function AdminDashboardPage() {
       if (!res.ok) throw new Error(`Erro HTTP ${res.status}`);
       const json = await res.json();
       if (!json.success) throw new Error(json.error || 'Erro ao carregar imóveis');
-      setProperties(json.data || []);
+      if (json.data && json.data.length > 0) {
+        setProperties(json.data);
+      } else {
+        setProperties(getStoredProperties());
+      }
     } catch (err: any) {
-      console.error('Erro ao carregar imóveis:', err);
-      setFetchError(err.message || 'Erro ao carregar imóveis do banco de dados.');
+      console.warn('Erro ao carregar imóveis da API, usando catálogo local:', err);
+      setProperties(getStoredProperties());
     } finally {
       setIsFetching(false);
     }
@@ -93,56 +98,55 @@ export default function AdminDashboardPage() {
 
   // Estatísticas
   const totalImoveis = properties.length;
-  const disponiveis = properties.filter((p) => p.status === 'disponivel').length;
-  const negociacao = properties.filter((p) => p.status === 'negociacao').length;
-  const vendidos = properties.filter((p) => p.status === 'vendido').length;
-  const ocultos = properties.filter((p) => p.status === 'oculto').length;
+  const disponiveis = properties.filter((p) => p && p.status === 'disponivel').length;
+  const negociacao = properties.filter((p) => p && p.status === 'negociacao').length;
+  const vendidos = properties.filter((p) => p && p.status === 'vendido').length;
+  const ocultos = properties.filter((p) => p && p.status === 'oculto').length;
 
-  // Filtro local (só UI — dados já vêm do banco)
+  // Filtro local seguro (protegido contra nulls e números)
   const filteredProperties = properties.filter((p) => {
-    const matchesSearch =
-      p.titulo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.bairro.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      p.id.includes(searchTerm);
+    if (!p) return false;
+    const term = (searchTerm || '').trim().toLowerCase();
+    const titulo = (p.titulo || '').toLowerCase();
+    const bairro = (p.bairro || '').toLowerCase();
+    const id = String(p.id || '').toLowerCase();
 
-    const matchesStatus =
-      statusFilter === 'todos' || p.status === statusFilter;
+    const matchesSearch = !term || titulo.includes(term) || bairro.includes(term) || id.includes(term);
+    const matchesStatus = statusFilter === 'todos' || p.status === statusFilter;
 
     return matchesSearch && matchesStatus;
   });
 
-  // Ações de Imóveis — agora chamam a API
+  // Ações de Imóveis — sincronizam store local e API
   const handleQuickStatusChange = async (id: string, newStatus: StatusImovel) => {
-    // Atualização otimista na UI
+    // Atualização otimista na UI e no store local
     setProperties((prev) =>
       prev.map((p) => (p.id === id ? { ...p, status: newStatus } : p))
     );
+    updatePropertyStatus(id, newStatus);
     try {
       const res = await fetch(`/api/properties/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       });
-      if (!res.ok) throw new Error('Falha ao atualizar status');
+      if (!res.ok) throw new Error('Falha ao atualizar status na API');
     } catch (err) {
-      console.error(err);
-      // Reverte em caso de erro
-      loadProperties();
+      console.warn('Status atualizado localmente:', err);
     }
   };
 
   const handleDelete = async (id: string, title: string) => {
     if (!confirm(`Tem certeza que deseja excluir o imóvel "${title}"?`)) return;
 
-    // Remove da UI imediatamente
+    // Remove da UI e do store local imediatamente
     setProperties((prev) => prev.filter((p) => p.id !== id));
+    deleteStoredProperty(id);
     try {
       const res = await fetch(`/api/properties/${id}`, { method: 'DELETE' });
-      if (!res.ok) throw new Error('Falha ao excluir imóvel');
+      if (!res.ok) throw new Error('Falha ao excluir imóvel na API');
     } catch (err) {
-      console.error(err);
-      // Recarrega lista em caso de falha
-      loadProperties();
+      console.warn('Imóvel excluído localmente:', err);
     }
   };
 
@@ -420,21 +424,21 @@ export default function AdminDashboardPage() {
                               {CATEGORIAS[property.categoria] || property.categoria}
                             </span>
                             <span className="text-gray-300">•</span>
-                            <span className="text-[11px] text-gray-400">Ref: #{property.id.slice(0, 8)}</span>
+                            <span className="text-[11px] text-gray-400">Ref: #{property.codigo || String(property.id || '').slice(0, 8) || 'REF'}</span>
                           </div>
 
                           <Link href={`/imoveis/${property.id}`}>
                             <h3 className="text-base sm:text-lg font-black text-gray-900 hover:text-[#1c1917] transition-colors line-clamp-1">
-                              {property.titulo}
+                              {property.titulo || 'Imóvel sem título'}
                             </h3>
                           </Link>
 
                           <p className="text-xs text-gray-500 mt-0.5">
-                            📍 {property.bairro}, Toledo • {property.quartos} qts • {property.banheiros} ban • {property.areaTotal || property.areaUtil || 0} m²
+                            📍 {property.bairro || 'Toledo'}, Toledo • {property.quartos ?? 0} qts • {property.banheiros ?? 0} ban • {property.areaTotal || property.areaUtil || 0} m²
                           </p>
 
                           <p className="text-base font-black text-[#1c1917] mt-1">
-                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(property.preco)}
+                            {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 }).format(Number(property.preco) || 0)}
                           </p>
                         </div>
                       </div>

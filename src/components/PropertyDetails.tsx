@@ -6,16 +6,18 @@ interface PropertyDetailsProps {
 }
 
 export default function PropertyDetails({ property }: PropertyDetailsProps) {
-  const formatPrice = (value: number): string => {
+  const formatPrice = (value: number | undefined | null): string => {
+    const num = typeof value === 'number' && !isNaN(value) ? value : Number(value) || 0;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(num);
   };
 
   const statusConfig = STATUS_IMOVEL_CONFIG[property.status] || STATUS_IMOVEL_CONFIG.disponivel;
-  const categoriaLabel = CATEGORIAS[property.categoria] || property.categoria;
+  const categoriaLabel = CATEGORIAS[property.categoria] || property.categoria || 'Imóvel';
+  const propertyCode = property.codigo || String(property.id || '').split('-')[0] || 'REF';
 
   return (
     <div className="w-full bg-white p-6 md:p-10 rounded-[2.5rem] shadow-[0_10px_35px_rgba(0,0,0,0.04)] border border-stone-200/70">
@@ -42,7 +44,7 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
 
             {/* Código Ref */}
             <span className="text-stone-400 text-xs font-medium ml-1">
-              Ref: #{property.codigo || property.id.split('-')[0]}
+              Ref: #{propertyCode}
             </span>
           </div>
           
@@ -125,9 +127,12 @@ export default function PropertyDetails({ property }: PropertyDetailsProps) {
           Sobre este imóvel
         </h2>
         <div className="prose prose-stone max-w-none text-stone-600 text-sm sm:text-base leading-relaxed">
-          {property.descricao.split('\n').map((paragraph, index) => (
-            <p key={index} className="mb-4 last:mb-0">{paragraph}</p>
-          ))}
+          {(property.descricao || 'Entre em contato com Ingrid Bossa para saber todos os detalhes deste imóvel.')
+            .split('\n')
+            .filter((p) => p.trim().length > 0)
+            .map((paragraph, index) => (
+              <p key={index} className="mb-4 last:mb-0">{paragraph}</p>
+            ))}
         </div>
       </div>
       

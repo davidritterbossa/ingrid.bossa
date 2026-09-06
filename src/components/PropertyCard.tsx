@@ -7,17 +7,21 @@ interface PropertyCardProps {
 }
 
 export default function PropertyCard({ property }: PropertyCardProps) {
-  const formatPrice = (value: number): string => {
+  const formatPrice = (value: number | undefined | null): string => {
+    const num = typeof value === 'number' && !isNaN(value) ? value : Number(value) || 0;
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
       maximumFractionDigits: 0,
-    }).format(value);
+    }).format(num);
   };
 
-  const hasImage = property.imagens && property.imagens.length > 0;
+  const hasImage = Array.isArray(property.imagens) && property.imagens.length > 0 && Boolean(property.imagens[0]);
+  const propertyCode = property.codigo || String(property.id || '').split('-')[0] || 'REF';
+  const propertyTitle = property.titulo || 'Imóvel Selecionado';
+
   const whatsappUrl = `https://wa.me/5545998100534?text=${encodeURIComponent(
-    `Olá Ingrid! Tenho interesse no imóvel "${property.titulo}" (Cód: ${property.codigo || property.id.split('-')[0]}). Pode me passar mais informações?`
+    `Olá Ingrid! Tenho interesse no imóvel "${propertyTitle}" (Cód: ${propertyCode}). Pode me passar mais informações?`
   )}`;
 
   return (
@@ -27,7 +31,11 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         {hasImage ? (
           <img 
             src={property.imagens[0]} 
-            alt={property.titulo}
+            alt={propertyTitle}
+            onError={(e) => {
+              // Em caso de erro ao carregar imagem remota, fallback visual elegante
+              (e.target as HTMLImageElement).src = '/images/lago-toledo-hero.jpg';
+            }}
             className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-700 ease-out"
           />
         ) : (
@@ -59,7 +67,7 @@ export default function PropertyCard({ property }: PropertyCardProps) {
           </div>
 
           <span className="bg-black/50 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold px-2.5 py-1.5 rounded-xl">
-            Cód: {property.codigo || property.id.split('-')[0]}
+            Cód: {propertyCode}
           </span>
         </div>
 
@@ -76,19 +84,21 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         {/* Bairro e Localização */}
         <p className="text-[11px] text-rosebronze-600 font-extrabold uppercase tracking-widest mb-2 flex items-center gap-1.5">
           <MapPin className="w-3.5 h-3.5" />
-          {property.bairro}, {property.cidade}
+          {property.bairro || 'Toledo'}, {property.cidade || 'PR'}
         </p>
         
         {/* Título */}
         <Link href={`/imoveis/${property.id}`}>
-          <h3 className="text-xl font-bold text-stone-900 line-clamp-1 group-hover:text-rosebronze-600 transition-colors mb-2" title={property.titulo}>
-            {property.titulo}
+          <h3 className="text-xl font-bold text-stone-900 line-clamp-1 group-hover:text-rosebronze-600 transition-colors mb-2" title={propertyTitle}>
+            {propertyTitle}
           </h3>
         </Link>
         
         {/* Preço */}
         <div className="mb-5 mt-auto">
-          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest block mb-0.5">Valor de Venda</span>
+          <span className="text-[10px] text-stone-400 font-bold uppercase tracking-widest block mb-0.5">
+            {property.tipo === 'locacao' ? 'Valor de Locação' : 'Valor de Venda'}
+          </span>
           <p className="text-2xl font-black text-stone-900 tracking-tight group-hover:text-rosebronze-600 transition-colors duration-300">
             {formatPrice(property.preco)}
           </p>
@@ -96,19 +106,19 @@ export default function PropertyCard({ property }: PropertyCardProps) {
         
         {/* Características Técnicas */}
         <div className="grid grid-cols-3 gap-2 py-3 border-y border-stone-100 text-xs text-stone-600 mb-5 bg-stone-50/70 rounded-2xl px-3">
-          <div className="flex items-center gap-1.5 justify-center" title={`${property.quartos} Quartos`}>
+          <div className="flex items-center gap-1.5 justify-center" title={`${property.quartos ?? 0} Quartos`}>
             <Bed className="w-4 h-4 text-rosebronze-600" />
-            <span className="font-bold">{property.quartos} qts</span>
+            <span className="font-bold">{property.quartos ?? 0} qts</span>
           </div>
           
-          <div className="flex items-center gap-1.5 justify-center" title={`${property.banheiros} Banheiros`}>
+          <div className="flex items-center gap-1.5 justify-center" title={`${property.banheiros ?? 0} Banheiros`}>
             <Bath className="w-4 h-4 text-rosebronze-600" />
-            <span className="font-bold">{property.banheiros} ban</span>
+            <span className="font-bold">{property.banheiros ?? 0} ban</span>
           </div>
           
-          <div className="flex items-center gap-1.5 justify-center" title={`${property.vagas} Vagas`}>
+          <div className="flex items-center gap-1.5 justify-center" title={`${property.vagas ?? 0} Vagas`}>
             <Car className="w-4 h-4 text-rosebronze-600" />
-            <span className="font-bold">{property.vagas} vgs</span>
+            <span className="font-bold">{property.vagas ?? 0} vgs</span>
           </div>
         </div>
 
