@@ -1,0 +1,51 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum TipoNegocio {
+  venda
+  locacao
+}
+
+enum CategoriaImovel {
+  casa
+  apartamento
+  terreno
+  comercial
+  rural
+}
+
+enum StatusImovel {
+  disponivel
+  vendido
+  oculto
+}
+
+model Property {
+  id          String          @id @default(cuid())
+  titulo      String
+  descricao   String          @db.Text
+  tipo        TipoNegocio
+  categoria   CategoriaImovel
+  preco       Float
+  rua         String?
+  bairro      String
+  cidade      String          @default("Toledo")
+  estado      String          @default("PR")
+  quartos     Int             @default(0)
+  banheiros   Int             @default(0)
+  vagas       Int             @default(0)
+  areaTotal   Float?
+  areaUtil    Float?
+  imagens     String[]
+  comodidades String[]
+  status      StatusImovel    @default(disponivel)
+  destaque    Boolean         @default(false)
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
