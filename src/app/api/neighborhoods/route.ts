@@ -1,10 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { BAIRROS_TOLEDO } from '@/types/property';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const fallback = BAIRROS_TOLEDO.map(name => ({ name }));
+
+  if (!isSupabaseConfigured) {
+    return NextResponse.json({ success: true, data: fallback, isFallback: true });
+  }
+
   try {
     const { data, error } = await supabase
       .from('neighborhoods')
@@ -12,12 +18,10 @@ export async function GET() {
       .order('name');
       
     if (error || !data || data.length === 0) {
-      const fallback = BAIRROS_TOLEDO.map(name => ({ name }));
       return NextResponse.json({ success: true, data: fallback, isFallback: true });
     }
     return NextResponse.json({ success: true, data });
   } catch (err: any) {
-    const fallback = BAIRROS_TOLEDO.map(name => ({ name }));
     return NextResponse.json({ success: true, data: fallback, isFallback: true });
   }
 }

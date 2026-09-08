@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { fromSupabase, toSupabase, SupabaseProperty } from '@/lib/supabaseMapper';
 import { MOCK_PROPERTIES } from '@/lib/mock';
 
@@ -10,6 +10,17 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: { id: string } }
 ) {
+  const fallback = MOCK_PROPERTIES.find((p) => String(p.id) === String(params.id) || String(p.codigo) === String(params.id));
+
+  if (!isSupabaseConfigured) {
+    if (fallback) {
+      return NextResponse.json({ success: true, data: fallback, isFallback: true });
+    }
+    return NextResponse.json(
+      { success: false, error: 'Imóvel não encontrado.' },
+      { status: 404 }
+    );
+  }
   try {
     const { data, error } = await supabase
       .from('properties')

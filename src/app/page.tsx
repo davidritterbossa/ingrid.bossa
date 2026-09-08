@@ -19,13 +19,19 @@ import PropertyGrid from '@/components/PropertyGrid';
 import WhatsAppCTA from '@/components/WhatsAppCTA';
 import { Property } from '@/types/property';
 
-export const revalidate = 0; // Evita cache estático, força atualização em tempo real
+export const revalidate = 60; // Incremental Static Regeneration a cada 60s para velocidade máxima e resiliência
 
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { fromSupabase, SupabaseProperty } from '@/lib/supabaseMapper';
 import { MOCK_PROPERTIES } from '@/lib/mock';
 
 async function getDestaques(): Promise<Property[]> {
+  const fallback = MOCK_PROPERTIES.filter(p => p.destaque);
+
+  if (!isSupabaseConfigured) {
+    return fallback;
+  }
+
   try {
     const { data, error } = await supabase
       .from('properties')
@@ -35,12 +41,12 @@ async function getDestaques(): Promise<Property[]> {
       .order('created_at', { ascending: false });
 
     if (error || !data || data.length === 0) {
-      return MOCK_PROPERTIES.filter(p => p.destaque);
+      return fallback;
     }
     
     return data.map((row) => fromSupabase(row as SupabaseProperty));
   } catch {
-    return MOCK_PROPERTIES.filter(p => p.destaque);
+    return fallback;
   }
 }
 

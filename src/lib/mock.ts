@@ -26,8 +26,8 @@ export const MOCK_PROPERTIES: Property[] = [
     comodidades: ['Suíte com Closet', 'Espaço Gourmet com Churrasqueira', 'Pé-direito Elevado', 'Porcelanato Polido', 'Portão Eletrônico', 'Iluminação em LED', 'Tubulação para Ar-condicionado'],
     status: 'disponivel',
     destaque: true,
-    createdAt: new Date('2024-06-10'),
-    updatedAt: new Date('2024-06-10'),
+    createdAt: '2024-06-10T00:00:00.000Z',
+    updatedAt: '2024-06-10T00:00:00.000Z',
   },
   {
     id: 'ib-2',
@@ -54,8 +54,8 @@ export const MOCK_PROPERTIES: Property[] = [
     comodidades: ['3 Suítes Plenas', 'Área Gourmet Completa', 'Esquadrias em Alumínio', 'Tubulação para Água Quente', 'Acabamento em Gesso', 'Garagem Paralela Coberta'],
     status: 'disponivel',
     destaque: true,
-    createdAt: new Date('2024-06-15'),
-    updatedAt: new Date('2024-06-15'),
+    createdAt: '2024-06-15T00:00:00.000Z',
+    updatedAt: '2024-06-15T00:00:00.000Z',
   },
   {
     id: 'ib-3',
@@ -81,8 +81,8 @@ export const MOCK_PROPERTIES: Property[] = [
     comodidades: ['Financiável Minha Casa Minha Vida', 'Piso Cerâmico de Qualidade', 'Bancadas em Granito', 'Espaço nos Fundos', 'Muros e Portão Instalados'],
     status: 'disponivel',
     destaque: true,
-    createdAt: new Date('2024-07-01'),
-    updatedAt: new Date('2024-07-01'),
+    createdAt: '2024-07-01T00:00:00.000Z',
+    updatedAt: '2024-07-01T00:00:00.000Z',
   },
   {
     id: 'ib-4',
@@ -107,8 +107,8 @@ export const MOCK_PROPERTIES: Property[] = [
     comodidades: ['Topografia Plana', 'Documentação 100% Regularizada', 'Pronto para Construir', 'Asfalto e Infraestrutura Completa', 'Excelente Insolação'],
     status: 'disponivel',
     destaque: false,
-    createdAt: new Date('2024-07-12'),
-    updatedAt: new Date('2024-07-12'),
+    createdAt: '2024-07-12T00:00:00.000Z',
+    updatedAt: '2024-07-12T00:00:00.000Z',
   },
   {
     id: 'ib-5',
@@ -134,8 +134,8 @@ export const MOCK_PROPERTIES: Property[] = [
     comodidades: ['Sacada com Churrasqueira', 'Elevador', 'Salão de Festas', 'Portaria Eletrônica', 'Móveis Fixos na Cozinha'],
     status: 'disponivel',
     destaque: true,
-    createdAt: new Date('2024-08-01'),
-    updatedAt: new Date('2024-08-01'),
+    createdAt: '2024-08-01T00:00:00.000Z',
+    updatedAt: '2024-08-01T00:00:00.000Z',
   },
   {
     id: 'ib-6',
@@ -161,7 +161,7 @@ export const MOCK_PROPERTIES: Property[] = [
     comodidades: ['Piscina com Deck', 'Quiosque Gourmet', 'Pomar Formado', 'Poço Artesiano', 'Energia Elétrica Bifásica', 'Área Verde Preservada'],
     status: 'disponivel',
     destaque: false,
-    createdAt: new Date('2024-08-20'),
-    updatedAt: new Date('2024-08-20'),
+    createdAt: '2024-08-20T00:00:00.000Z',
+    updatedAt: '2024-08-20T00:00:00.000Z',
   }
 ];

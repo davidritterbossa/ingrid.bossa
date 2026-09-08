@@ -2,24 +2,37 @@ import PropertyClientPage from './PropertyClientPage';
 import { Property } from '@/types/property';
 import { MOCK_PROPERTIES } from '@/lib/mock';
 
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { fromSupabase, SupabaseProperty } from '@/lib/supabaseMapper';
+
 interface PropertyPageProps {
   params: {
     id: string;
   };
 }
 
+export const revalidate = 60;
+
 async function getProperty(id: string): Promise<Property | null> {
+  const fallback = MOCK_PROPERTIES.find(p => String(p.id) === String(id) || String(p.codigo) === String(id)) || null;
+
+  if (!isSupabaseConfigured) {
+    return fallback;
+  }
+
   try {
-    const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null;
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || vercelUrl || 'http://localhost:3000';
-    const res = await fetch(`${siteUrl}/api/properties/${id}`, { cache: 'no-store' });
-    if (!res.ok) {
-      return MOCK_PROPERTIES.find(p => String(p.id) === String(id)) || null;
+    const { data, error } = await supabase
+      .from('properties')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (!error && data) {
+      return fromSupabase(data as SupabaseProperty);
     }
-    const json = await res.json();
-    return json.success ? json.data : (MOCK_PROPERTIES.find(p => String(p.id) === String(id)) || null);
+    return fallback;
   } catch {
-    return MOCK_PROPERTIES.find(p => String(p.id) === String(id)) || null;
+    return fallback;
   }
 }
 

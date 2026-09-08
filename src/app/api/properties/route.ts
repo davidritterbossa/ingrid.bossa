@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
 import { uploadImageToCloudinary } from '@/lib/cloudinary';
 import { fromSupabase, SupabaseProperty } from '@/lib/supabaseMapper';
 import { MOCK_PROPERTIES } from '@/lib/mock';
@@ -12,6 +12,18 @@ export async function GET(request: NextRequest) {
   const status = searchParams.get('status');
   const category = searchParams.get('category');
   const type = searchParams.get('type');
+
+  const filterMock = () => {
+    let mockData = [...MOCK_PROPERTIES];
+    if (status && status !== 'todos') mockData = mockData.filter(p => p.status === status);
+    if (category) mockData = mockData.filter(p => (p.categoria || '').toLowerCase() === category.toLowerCase());
+    if (type) mockData = mockData.filter(p => (p.tipo || '').toLowerCase() === type.toLowerCase());
+    return mockData;
+  };
+
+  if (!isSupabaseConfigured) {
+    return NextResponse.json({ success: true, data: filterMock(), isFallback: true }, { status: 200 });
+  }
 
   try {
     let query = supabase

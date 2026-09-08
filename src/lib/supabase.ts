@@ -1,12 +1,18 @@
 import { createClient } from '@supabase/supabase-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co';
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder';
+const rawUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+const rawKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY?.trim();
 
-if (supabaseUrl === 'https://placeholder.supabase.co') {
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('Supabase URL ou Anon Key não configuradas no ambiente.');
-  }
-}
+export const isSupabaseConfigured = Boolean(
+  rawUrl &&
+  rawKey &&
+  rawUrl.startsWith('https://') &&
+  !rawUrl.includes('placeholder') &&
+  !rawUrl.includes('seu-projeto')
+);
+
+const supabaseUrl = isSupabaseConfigured ? rawUrl! : 'https://placeholder.supabase.co';
+const supabaseAnonKey = isSupabaseConfigured ? rawKey! : 'placeholder';
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey);
+

@@ -53,8 +53,8 @@ export function fromSupabase(row: SupabaseProperty): Property {
     comodidades: row.amenities ?? [],
     status: row.status as StatusImovel,
     destaque: row.featured ?? false,
-    createdAt: row.created_at ? new Date(row.created_at) : new Date(),
-    updatedAt: row.updated_at ? new Date(row.updated_at) : new Date(),
+    createdAt: row.created_at || new Date().toISOString(),
+    updatedAt: row.updated_at || new Date().toISOString(),
   };
 }
 

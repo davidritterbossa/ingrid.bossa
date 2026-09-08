@@ -1,3 +1,5 @@
+'use client';
+
 import Link from 'next/link';
 import { Bed, Bath, Car, MessageCircle, ArrowUpRight, MapPin, Maximize2 } from 'lucide-react';
 import { Property } from '@/types/property';

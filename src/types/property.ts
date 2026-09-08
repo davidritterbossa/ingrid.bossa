@@ -56,8 +56,8 @@ export interface Property {
   comodidades: string[];
   status: StatusImovel;
   destaque: boolean;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt: Date | string;
+  updatedAt: Date | string;
 }
 
 export interface SearchFilters {
